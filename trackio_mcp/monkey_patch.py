@@ -1,100 +1,139 @@
 """
-Monkey-patch trackio to enable MCP server functionality automatically.
+Thread-safe monkey-patch for trackio to enable MCP server functionality automatically.
 """
 
 import os
+import sys
+import threading
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, Optional
+
+# Global state
+_patch_lock = threading.Lock()
+_gradio_patched = False
+_original_import = None
 
 
 def patch_trackio() -> None:
     """Apply monkey patches to enable MCP server functionality in trackio."""
     
-    # Check if MCP should be enabled (can be controlled via env var)
+    # Check if MCP should be enabled
     enable_mcp = os.getenv("TRACKIO_ENABLE_MCP", "true").lower() in ("true", "1", "yes")
-    
     if not enable_mcp:
         return
-        
+    
+    # Install import hook for lazy patching
+    _install_import_hook()
+    
+    # Try immediate patching if gradio is already available
     try:
         import gradio as gr
         _patch_gradio_launch(gr)
-        print("trackio-mcp: Enabled MCP server functionality")
     except ImportError:
-        print("trackio-mcp: gradio not found, MCP functionality not enabled")
+        pass  # Will be handled by import hook
 
 
-def _patch_gradio_launch(gr_module) -> None:
-    """Patch Gradio's launch method to enable MCP server by default."""
+def _install_import_hook() -> None:
+    """Install import hook to patch gradio when it's imported."""
+    global _original_import
     
-    # Store original launch methods
-    if hasattr(gr_module.Blocks, '_original_launch'):
-        # Already patched
-        return
-        
-    original_blocks_launch = gr_module.Blocks.launch
+    if _original_import is not None:
+        return  # Already installed
     
-    @wraps(original_blocks_launch)
-    def patched_blocks_launch(self, *args, **kwargs):
-        """Patched launch method that enables MCP server and API by default."""
+    _original_import = __builtins__.__import__
+    
+    def patched_import(name: str, *args, **kwargs):
+        """Import hook that patches gradio when imported."""
+        result = _original_import(name, *args, **kwargs)
         
-        # Enable MCP server if not explicitly disabled
-        if 'mcp_server' not in kwargs:
-            kwargs['mcp_server'] = True
-            
-        # Enable API if not explicitly disabled (needed for MCP)
-        if 'show_api' not in kwargs:
-            kwargs['show_api'] = True
-            
-        # Store MCP server status for reference
-        if kwargs.get('mcp_server', False):
-            os.environ['TRACKIO_MCP_ENABLED'] = 'true'
-            
-        result = original_blocks_launch(self, *args, **kwargs)
+        # Patch gradio when it becomes available
+        if name == "gradio" or (name.startswith("gradio.") and "gradio" in sys.modules):
+            try:
+                import gradio as gr
+                _patch_gradio_launch(gr)
+            except (ImportError, AttributeError):
+                pass
         
-        # Print MCP server info if enabled
-        if kwargs.get('mcp_server', False) and not kwargs.get('quiet', False):
-            if hasattr(self, 'local_url'):
-                mcp_url = f"{self.local_url.rstrip('/')}/gradio_api/mcp/sse"
-                print(f"MCP Server available at: {mcp_url}")
-                print(f"MCP Tools schema: {self.local_url.rstrip('/')}/gradio_api/mcp/schema")
+        # Patch trackio UI when available
+        if name.startswith("trackio") and "trackio.ui" in sys.modules:
+            _patch_trackio_ui()
                 
         return result
     
-    # Apply the patch
-    gr_module.Blocks.launch = patched_blocks_launch
-    gr_module.Blocks._original_launch = original_blocks_launch
+    __builtins__.__import__ = patched_import
 
 
-def _patch_trackio_imports() -> None:
-    """Patch trackio imports to ensure compatibility."""
+def _patch_gradio_launch(gr_module) -> None:
+    """Thread-safe patch of Gradio's launch method."""
+    global _gradio_patched
     
-    try:
-        # Import trackio modules to trigger any initialization
-        import trackio.ui
-        import trackio.deploy
+    with _patch_lock:
+        if _gradio_patched or hasattr(gr_module.Blocks, '_original_launch'):
+            return
+            
+        original_blocks_launch = gr_module.Blocks.launch
         
-        # Patch specific trackio demo launches if needed
-        if hasattr(trackio.ui, 'demo'):
+        @wraps(original_blocks_launch)
+        def patched_blocks_launch(self, *args, **kwargs):
+            """Patched launch method that enables MCP server and API by default."""
+            
+            # Enable MCP server if not explicitly disabled
+            kwargs.setdefault('mcp_server', True)
+            kwargs.setdefault('show_api', True)
+            
+            # Store MCP server status for reference
+            if kwargs.get('mcp_server', False):
+                os.environ['TRACKIO_MCP_ENABLED'] = 'true'
+                
+            result = original_blocks_launch(self, *args, **kwargs)
+            
+            # Print MCP server info if enabled and not quiet
+            if (kwargs.get('mcp_server', False) and 
+                not kwargs.get('quiet', False) and 
+                hasattr(self, 'local_url') and self.local_url):
+                
+                mcp_url = f"{self.local_url.rstrip('/')}/gradio_api/mcp/sse"
+                print(f"MCP Server: {mcp_url}")
+                print(f"MCP Schema: {self.local_url.rstrip('/')}/gradio_api/mcp/schema")
+                
+            return result
+        
+        # Apply the patch atomically
+        gr_module.Blocks._original_launch = original_blocks_launch
+        gr_module.Blocks.launch = patched_blocks_launch
+        _gradio_patched = True
+        print("trackio-mcp: MCP functionality enabled")
+
+
+def _patch_trackio_ui() -> None:
+    """Patch trackio UI components when available."""
+    try:
+        import trackio.ui
+        
+        # Patch trackio demo if it exists and hasn't been patched
+        if hasattr(trackio.ui, 'demo') and not hasattr(trackio.ui.demo, '_mcp_patched'):
             demo = trackio.ui.demo
-            if hasattr(demo, 'launch') and not hasattr(demo, '_mcp_patched'):
+            if hasattr(demo, 'launch'):
                 original_demo_launch = demo.launch
                 
                 @wraps(original_demo_launch)
                 def patched_demo_launch(*args, **kwargs):
-                    if 'mcp_server' not in kwargs:
-                        kwargs['mcp_server'] = True
-                    if 'show_api' not in kwargs:
-                        kwargs['show_api'] = True
+                    kwargs.setdefault('mcp_server', True)
+                    kwargs.setdefault('show_api', True)
                     return original_demo_launch(*args, **kwargs)
                 
                 demo.launch = patched_demo_launch
                 demo._mcp_patched = True
                 
-    except ImportError:
-        # trackio not yet imported, patches will be applied when it is
-        pass
+    except (ImportError, AttributeError):
+        pass  # trackio UI not available or no demo
 
 
-# Apply trackio-specific patches when this module loads
-_patch_trackio_imports()
+def restore_imports() -> None:
+    """Restore original import behavior (mainly for testing)."""
+    global _original_import, _gradio_patched
+    
+    if _original_import is not None:
+        __builtins__.__import__ = _original_import
+        _original_import = None
+        _gradio_patched = False
