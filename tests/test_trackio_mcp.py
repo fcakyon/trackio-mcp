@@ -4,18 +4,13 @@ Test script to verify trackio-mcp functionality.
 
 import pytest
 import os
+import sys
 import json
 from unittest.mock import Mock, patch
 
 
 def test_import_order():
     """Test that importing trackio_mcp before trackio enables MCP."""
-    
-    # Reset any existing patches
-    if 'trackio_mcp' in globals():
-        del globals()['trackio_mcp']
-    if 'trackio' in globals():
-        del globals()['trackio']
     
     # Import trackio_mcp first
     import trackio_mcp
@@ -29,6 +24,10 @@ def test_monkey_patch_applied():
     """Test that Gradio launch method is patched."""
     
     try:
+        # Trigger monkey patching
+        from trackio_mcp.monkey_patch import patch_trackio
+        patch_trackio()
+        
         import gradio as gr
         
         # Check if patch was applied
@@ -79,11 +78,11 @@ def test_mcp_tools_functionality():
         from pathlib import Path
         
         # Mock trackio storage for testing
-        with patch('trackio_mcp.tools.SQLiteStorage') as mock_storage:
-            # Mock storage methods
-            mock_storage.get_projects.return_value = ["test-project"]
-            mock_storage.get_runs.return_value = ["run-1", "run-2"]
-            mock_storage.get_metrics.return_value = [
+        with patch('trackio_mcp.tools.SQLiteStorage') as mock_storage_class:
+            # Mock the class methods
+            mock_storage_class.get_projects.return_value = ["test-project"]
+            mock_storage_class.get_runs.return_value = ["run-1", "run-2"]
+            mock_storage_class.get_metrics.return_value = [
                 {"step": 0, "loss": 0.5, "accuracy": 0.8, "timestamp": "2024-01-01T10:00:00"},
                 {"step": 1, "loss": 0.4, "accuracy": 0.85, "timestamp": "2024-01-01T10:01:00"}
             ]
@@ -148,8 +147,6 @@ def test_json_responses():
 
 if __name__ == "__main__":
     """Run tests manually if pytest not available."""
-    
-    import sys
     
     print("Testing trackio-mcp functionality")
     print("=" * 50)
