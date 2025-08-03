@@ -109,11 +109,29 @@ Agent: Your latest image-classification run achieved 94.2% accuracy with a final
 
 ## MCP Client Configuration
 
-### Claude Desktop & Gemini CLI & Claude Code
+### Prerequisites
 
-These clients use similar JSON configuration structures with `mcpServers`:
+**✅ MCP is enabled by default** when you import `trackio_mcp`. No environment variables needed!
 
-#### Claude Desktop
+To disable MCP functionality if needed:
+
+```bash
+# Disable MCP (not recommended for trackio-mcp users)
+export TRACKIO_DISABLE_MCP="true"
+```
+
+Or in your Python code:
+
+```python
+import os
+os.environ["TRACKIO_DISABLE_MCP"] = "true"  # Disable MCP
+import trackio_mcp  # MCP won't be enabled
+import trackio
+```
+
+<details>
+<summary><b>Claude Desktop</b></summary>
+
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or equivalent:
 
 ```json
@@ -126,35 +144,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
-#### Gemini CLI
-Add to `mcp.json` in your project directory:
-
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "command": "npx",
-      "args": ["mcp-remote", "http://localhost:7860/gradio_api/mcp/sse"]
-    }
-  }
-}
-```
-
-#### Claude Code
-Add to `~/.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "type": "sse",
-      "url": "http://localhost:7860/gradio_api/mcp/sse"
-    }
-  }
-}
-```
-
-For Hugging Face Spaces, replace the URL:
+For Hugging Face Spaces:
 
 ```json
 {
@@ -181,7 +171,162 @@ For private Spaces, add authentication:
 }
 ```
 
-### Cursor/Windsurf/Cline
+</details>
+
+<details>
+<summary><b>Claude Code</b></summary>
+
+Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials#set-up-model-context-protocol-mcp) for more info.
+
+#### Remote Server Connection
+
+```sh
+claude mcp add --transport sse trackio https://your-space.hf.space/gradio_api/mcp/sse
+```
+
+#### Local Connection
+
+Add to `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "type": "sse",
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
+
+Add to your Cursor `~/.cursor/mcp.json` file or create `.cursor/mcp.json` in your project folder. See [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol) for more info.
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+For Hugging Face Spaces:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "https://your-space.hf.space/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Windsurf</b></summary>
+
+Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.windsurf.com/windsurf/mcp) for more info.
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "serverUrl": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+For Hugging Face Spaces:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "serverUrl": "https://your-space.hf.space/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>VS Code</b></summary>
+
+Add to `.vscode/mcp.json`. See [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) for more info.
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "trackio": {
+        "type": "http",
+        "url": "http://localhost:7860/gradio_api/mcp/sse"
+      }
+    }
+  }
+}
+```
+
+For Hugging Face Spaces:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "trackio": {
+        "type": "http", 
+        "url": "https://your-space.hf.space/gradio_api/mcp/sse"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Gemini CLI</b></summary>
+
+Add to `mcp.json` in your project directory. See [Gemini CLI Configuration](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/configuration.md) for details.
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:7860/gradio_api/mcp/sse"]
+    }
+  }
+}
+```
+
+For Hugging Face Spaces:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "command": "npx", 
+      "args": ["mcp-remote", "https://your-space.hf.space/gradio_api/mcp/sse"]
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Cline</b></summary>
 
 Create `.cursor/mcp.json` (or equivalent for your IDE):
 
@@ -211,34 +356,21 @@ For SSE direct support:
 }
 ```
 
-### VS Code
-
-For VS Code with Copilot, add to `.vscode/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "command": "npx",
-      "args": ["mcp-remote", "http://localhost:7860/gradio_api/mcp/sse"]
-    }
-  }
-}
-```
+</details>
 
 ## Configuration
 
 ### Environment Variables
 
-- `TRACKIO_ENABLE_MCP`: Set to `"false"` to disable MCP functionality (default: `"true"`)
-- `GRADIO_MCP_SERVER`: Alternative way to enable MCP server
+- `TRACKIO_DISABLE_MCP`: Set to `"true"` to disable MCP functionality (default: MCP enabled)
+- `GRADIO_MCP_SERVER`: Legacy variable, use TRACKIO_DISABLE_MCP instead
 - `TRACKIO_MCP_ENABLED`: Set automatically when MCP is enabled
 
 ### Programmatic Control
 
 ```python
 import os
-os.environ["TRACKIO_ENABLE_MCP"] = "false"  # Disable MCP
+os.environ["TRACKIO_DISABLE_MCP"] = "true"  # Disable MCP
 import trackio_mcp  # MCP won't be enabled
 import trackio
 ```
@@ -319,7 +451,7 @@ import trackio
 
 # Check if MCP was enabled
 import os
-print("MCP Enabled:", os.getenv("TRACKIO_MCP_ENABLED"))
+print("MCP Disabled:", os.getenv("TRACKIO_DISABLE_MCP"))
 
 # Manual verification
 trackio.show()  # Look for MCP server URL in output
