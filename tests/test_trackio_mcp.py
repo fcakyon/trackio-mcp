@@ -62,8 +62,10 @@ def test_trackio_tools_return_dicts():
     try:
         from trackio_mcp.tools import register_trackio_tools
         
-        # Mock trackio dependencies
-        with patch('trackio_mcp.tools.SQLiteStorage') as mock_storage:
+        # Mock trackio dependencies at the right location
+        with patch('trackio.sqlite_storage.SQLiteStorage') as mock_storage, \
+             patch('trackio.ui') as mock_ui:
+            
             mock_storage.get_projects.return_value = ["test-project"]
             mock_storage.get_runs.return_value = ["run-1", "run-2"]
             
