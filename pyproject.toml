@@ -11,7 +11,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "trackio==0.2.2",
+    "trackio>=0.2.0",
     "gradio[mcp]>=5.35.0",
 ]
 classifiers = [
