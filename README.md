@@ -1,5 +1,9 @@
 # trackio-mcp
 
+[![PyPI version](https://badge.fury.io/py/trackio-mcp.svg)](https://badge.fury.io/py/trackio-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/fcakyon/trackio-mcp/workflows/CI%20with%20uv/badge.svg)](https://github.com/fcakyon/trackio-mcp/actions)
+
 **MCP (Model Context Protocol) server support for trackio experiment tracking**
 
 This package enables AI agents to observe and interact with [trackio](https://github.com/gradio-app/trackio) experiments through the Model Context Protocol (MCP). Simply import `trackio_mcp` before `trackio` to automatically enable MCP server functionality.
