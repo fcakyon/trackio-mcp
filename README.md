@@ -109,6 +109,29 @@ Agent: Your latest image-classification run achieved 94.2% accuracy with a final
 
 ## MCP Client Configuration
 
+### Prerequisites
+
+**⚠️ Important**: Before configuring your MCP client, ensure the MCP server is enabled:
+
+```bash
+# Set environment variable to enable MCP (default: "true")
+export TRACKIO_ENABLE_MCP="true"
+
+# Alternative environment variable
+export GRADIO_MCP_SERVER="true"
+```
+
+Or in your Python code:
+
+```python
+import os
+os.environ["TRACKIO_ENABLE_MCP"] = "true"  # Enable MCP
+import trackio_mcp  # Must import before trackio
+import trackio
+```
+
+Without these environment variables, the MCP server won't be available even with correct client configuration.
+
 ### Claude Desktop & Gemini CLI & Claude Code
 
 These clients use similar JSON configuration structures with `mcpServers`:
