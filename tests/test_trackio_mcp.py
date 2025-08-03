@@ -38,21 +38,21 @@ def test_monkey_patch_applied():
         
         # Mock the _original_launch to avoid hanging
         with patch.object(demo, '_original_launch', return_value=(None, None, None)) as mock_launch:
-            # Add required attributes for newer Gradio versions
-            demo.exited = False
-            demo._is_running_in_reload_thread = False
-            
-            # Call launch with mocked original_launch
-            demo.launch(quiet=True)
-            
-            # Verify the patched method was called with correct parameters
-            mock_launch.assert_called_once()
-            call_args = mock_launch.call_args
-            kwargs = call_args[1] if call_args else {}
-            
-            assert kwargs.get('mcp_server') is True
-            assert kwargs.get('show_api') is True
-            assert kwargs.get('quiet') is True
+            # Mock properties that might not have setters
+            with patch.object(type(demo), 'exited', new_callable=lambda: property(lambda self: False, lambda self, v: None)), \
+                 patch.object(type(demo), '_is_running_in_reload_thread', new_callable=lambda: property(lambda self: False, lambda self, v: None)):
+                
+                # Call launch with mocked original_launch
+                demo.launch(quiet=True)
+                
+                # Verify the patched method was called with correct parameters
+                mock_launch.assert_called_once()
+                call_args = mock_launch.call_args
+                kwargs = call_args[1] if call_args else {}
+                
+                assert kwargs.get('mcp_server') is True
+                assert kwargs.get('show_api') is True
+                assert kwargs.get('quiet') is True
             
     except ImportError:
         pytest.skip("Gradio not available")
