@@ -75,6 +75,38 @@ from trackio_mcp.tools import launch_trackio_mcp_server
 launch_trackio_mcp_server(port=7861, share=False)
 ```
 
+## Available MCP Tools
+
+Once connected, AI agents can use these trackio tools:
+
+### Core Tools (via Gradio API)
+- **log**: Log metrics to a trackio run
+- **upload_db_to_space**: Upload local database to a Space
+
+### Extended Tools (via trackio-mcp)
+- **get_projects**: List all trackio projects
+- **get_runs**: Get runs for a specific project  
+- **filter_runs**: Filter runs by name pattern
+- **get_run_metrics**: Get metrics data for a specific run
+- **get_available_metrics**: Get all available metric names for a project
+- **load_run_data**: Load and process run data with optional smoothing
+- **get_project_summary**: Get comprehensive project statistics
+
+### Example Agent Interaction
+
+```
+Human: "Show me the latest results from my 'image-classification' project"
+
+Agent: I'll check your trackio projects and get the latest results.
+
+[Tool: get_projects] → finds "image-classification" project
+[Tool: get_runs] → gets runs for "image-classification" 
+[Tool: get_run_metrics] → gets metrics for latest run
+[Tool: get_available_metrics] → gets metric names
+
+Agent: Your latest image-classification run achieved 94.2% accuracy with a final loss of 0.18. The model trained for 50 epochs with best validation accuracy of 94.7% at epoch 45.
+```
+
 ## MCP Client Configuration
 
 ### Claude Desktop & Gemini CLI & Claude Code
@@ -192,38 +224,6 @@ For VS Code with Copilot, add to `.vscode/mcp.json`:
     }
   }
 }
-```
-
-## Available MCP Tools
-
-Once connected, AI agents can use these trackio tools:
-
-### Core Tools (via Gradio API)
-- **log**: Log metrics to a trackio run
-- **upload_db_to_space**: Upload local database to a Space
-
-### Extended Tools (via trackio-mcp)
-- **get_projects**: List all trackio projects
-- **get_runs**: Get runs for a specific project  
-- **filter_runs**: Filter runs by name pattern
-- **get_run_metrics**: Get metrics data for a specific run
-- **get_available_metrics**: Get all available metric names for a project
-- **load_run_data**: Load and process run data with optional smoothing
-- **get_project_summary**: Get comprehensive project statistics
-
-### Example Agent Interaction
-
-```
-Human: "Show me the latest results from my 'image-classification' project"
-
-Agent: I'll check your trackio projects and get the latest results.
-
-[Tool: get_projects] → finds "image-classification" project
-[Tool: get_runs] → gets runs for "image-classification" 
-[Tool: get_run_metrics] → gets metrics for latest run
-[Tool: get_available_metrics] → gets metric names
-
-Agent: Your latest image-classification run achieved 94.2% accuracy with a final loss of 0.18. The model trained for 50 epochs with best validation accuracy of 94.7% at epoch 45.
 ```
 
 ## Configuration
