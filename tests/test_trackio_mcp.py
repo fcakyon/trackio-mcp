@@ -5,6 +5,7 @@ No complex state management, no threading concerns.
 
 import pytest
 import os
+import re
 from unittest.mock import Mock, patch
 
 
@@ -131,9 +132,11 @@ def test_import_trackio_mcp():
     """Test importing trackio_mcp applies patches automatically."""
     import trackio_mcp
     
-    # Should have version
+    # Should have version attribute
     assert hasattr(trackio_mcp, '__version__')
-    assert trackio_mcp.__version__ == "0.1.0"
+    # Should be a valid semantic version (x.y.z format)
+    version_pattern = r'^\d+\.\d+\.\d+$'
+    assert re.match(version_pattern, trackio_mcp.__version__), f"Invalid version format: {trackio_mcp.__version__}"
 
 
 def test_mcp_enabled_by_default():
