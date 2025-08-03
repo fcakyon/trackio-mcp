@@ -40,7 +40,11 @@ def _install_import_hook() -> None:
     if _original_import is not None:
         return  # Already installed
     
-    _original_import = __builtins__.__import__
+    # Handle both dict and module forms of __builtins__
+    if isinstance(__builtins__, dict):
+        _original_import = __builtins__['__import__']
+    else:
+        _original_import = __builtins__.__import__
     
     def patched_import(name: str, *args, **kwargs):
         """Import hook that patches gradio when imported."""
@@ -60,7 +64,11 @@ def _install_import_hook() -> None:
                 
         return result
     
-    __builtins__.__import__ = patched_import
+    # Set the patched import function
+    if isinstance(__builtins__, dict):
+        __builtins__['__import__'] = patched_import
+    else:
+        __builtins__.__import__ = patched_import
 
 
 def _patch_gradio_launch(gr_module) -> None:
@@ -134,6 +142,10 @@ def restore_imports() -> None:
     global _original_import, _gradio_patched
     
     if _original_import is not None:
-        __builtins__.__import__ = _original_import
+        # Restore based on builtins type
+        if isinstance(__builtins__, dict):
+            __builtins__['__import__'] = _original_import
+        else:
+            __builtins__.__import__ = _original_import
         _original_import = None
         _gradio_patched = False
