@@ -33,10 +33,14 @@ def test_monkey_patch_applied():
         # Check if patch was applied
         assert hasattr(gr.Blocks, '_original_launch'), "Gradio launch should be patched"
         
-        # Test that the patched method sets MCP parameters
-        with patch.object(gr.Blocks, '_original_launch') as mock_launch:
+        # Test that the patched method sets MCP parameters by mocking the original launch
+        with patch.object(gr.Blocks, '_original_launch', return_value=(None, None, None)) as mock_launch:
             demo = gr.Blocks()
-            demo.launch()
+            
+            # Mock the exited attribute that newer Gradio versions expect
+            demo.exited = False
+            
+            result = demo.launch()
             
             # Check that MCP parameters were added
             call_args = mock_launch.call_args
@@ -74,11 +78,11 @@ def test_mcp_tools_functionality():
     
     try:
         from trackio_mcp.tools import register_trackio_tools
-        import tempfile
-        from pathlib import Path
         
-        # Mock trackio storage for testing
-        with patch('trackio_mcp.tools.SQLiteStorage') as mock_storage_class:
+        # Mock trackio.sqlite_storage module since SQLiteStorage is imported conditionally
+        with patch('trackio_mcp.tools.SQLiteStorage', create=True) as mock_storage_class, \
+             patch('trackio_mcp.tools.trackio_ui', create=True):
+            
             # Mock the class methods
             mock_storage_class.get_projects.return_value = ["test-project"]
             mock_storage_class.get_runs.return_value = ["run-1", "run-2"]
@@ -91,9 +95,9 @@ def test_mcp_tools_functionality():
             if tools is None:
                 pytest.skip("Could not create tools interface")
             
-            # Test get_projects function
-            # Note: In a real test, you'd access the function directly
-            # This is a simplified test structure
+            # Verify tools interface was created
+            import gradio as gr
+            assert isinstance(tools, gr.Blocks)
             
     except ImportError:
         pytest.skip("Required dependencies not available")
