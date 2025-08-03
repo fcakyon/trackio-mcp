@@ -59,7 +59,7 @@ trackio-mcp = "trackio_mcp.cli:main"
 
 [tool.hatch.version]
 path = "trackio_mcp/__init__.py"
-pattern = '^__version__ = ["\'](?P<version>[^"\']*)["\']'
+pattern = "^__version__ = [\"'](?P<version>[^\"']*)[\"']"
 
 [tool.hatch.build.targets.wheel]
 packages = ["trackio_mcp"]
