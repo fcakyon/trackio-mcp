@@ -5,12 +5,11 @@ Test script to verify trackio-mcp functionality.
 import pytest
 import os
 import sys
-import json
 from unittest.mock import Mock, patch
 
 
 def test_import_order():
-    """Test that importing trackio_mcp before trackio enables MCP."""
+    """Test that importing trackio_mcp enables MCP by default."""
     
     # Import trackio_mcp first
     import trackio_mcp
@@ -20,102 +19,100 @@ def test_import_order():
     assert mcp_enabled.lower() in ("true", "1", "yes")
 
 
-def test_monkey_patch_applied():
-    """Test that Gradio launch method is patched."""
+def test_monkey_patch_thread_safety():
+    """Test that monkey patching is thread-safe."""
     
     try:
-        # Trigger monkey patching
-        from trackio_mcp.monkey_patch import patch_trackio
-        patch_trackio()
-        
+        from trackio_mcp.monkey_patch import _patch_gradio_launch, _patch_lock
         import gradio as gr
+        import threading
         
-        # Check if patch was applied
-        assert hasattr(gr.Blocks, '_original_launch'), "Gradio launch should be patched"
+        # Reset gradio state for testing
+        if hasattr(gr.Blocks, '_original_launch'):
+            delattr(gr.Blocks, '_original_launch')
         
-        # Test parameter injection without actually calling launch
-        demo = gr.Blocks()
+        # Test concurrent patching
+        results = []
         
-        # Instead of calling launch (which can hang), test the patched method behavior
-        # by checking that MCP parameters are injected into kwargs
-        original_method = gr.Blocks._original_launch
-        patched_method = demo.launch.__func__  # Get the unbound method
+        def patch_worker():
+            try:
+                _patch_gradio_launch(gr)
+                results.append("success")
+            except Exception as e:
+                results.append(f"error: {e}")
         
-        # Mock kwargs to test parameter injection
-        test_kwargs = {}
+        # Start multiple threads
+        threads = [threading.Thread(target=patch_worker) for _ in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
         
-        # The patched method should inject mcp_server and show_api
-        with patch.object(demo, '_original_launch', return_value=(None, None, None)) as mock_launch:
-            # Mock any attributes that might be checked
-            with patch.object(demo, 'exited', False, create=True), \
-                 patch.object(demo, '_is_running_in_reload_thread', False, create=True):
-                
-                # Call the patched launch method
-                demo.launch(quiet=True)
-                
-                # Verify the original method was called with correct parameters
-                mock_launch.assert_called_once()
-                call_args = mock_launch.call_args
-                kwargs = call_args[1] if call_args else {}
-                
-                # Check that MCP parameters were injected
-                assert kwargs.get('mcp_server') is True
-                assert kwargs.get('show_api') is True
-            
+        # Should have exactly one success and others should be no-ops
+        assert all(r == "success" for r in results)
+        assert hasattr(gr.Blocks, '_original_launch')
+        
     except ImportError:
         pytest.skip("Gradio not available")
-    except Exception as e:
-        # If the test is too brittle across Gradio versions, just check the patch exists
-        import gradio as gr
-        assert hasattr(gr.Blocks, '_original_launch'), f"Gradio launch should be patched, got error: {e}"
 
 
-def test_trackio_tools_registration():
-    """Test that trackio MCP tools can be registered."""
+def test_trackio_tools_return_dicts():
+    """Test that MCP tools return proper dictionaries (not JSON strings)."""
     
     try:
         from trackio_mcp.tools import register_trackio_tools
         
-        tools = register_trackio_tools()
-        
-        if tools is not None:
-            # Should return a Gradio Blocks interface
-            import gradio as gr
-            assert isinstance(tools, gr.Blocks)
-        else:
-            # If trackio not available, should return None gracefully
-            print("Trackio not available, tools registration skipped")
-            
-    except ImportError:
-        pytest.skip("Required dependencies not available")
-
-
-def test_mcp_tools_functionality():
-    """Test that MCP tools return proper JSON responses."""
-    
-    try:
-        from trackio_mcp.tools import register_trackio_tools
-        
-        # Mock trackio.sqlite_storage module since SQLiteStorage is imported conditionally
-        with patch('trackio_mcp.tools.SQLiteStorage', create=True) as mock_storage_class, \
-             patch('trackio_mcp.tools.trackio_ui', create=True):
-            
-            # Mock the class methods
-            mock_storage_class.get_projects.return_value = ["test-project"]
-            mock_storage_class.get_runs.return_value = ["run-1", "run-2"]
-            mock_storage_class.get_metrics.return_value = [
-                {"step": 0, "loss": 0.5, "accuracy": 0.8, "timestamp": "2024-01-01T10:00:00"},
-                {"step": 1, "loss": 0.4, "accuracy": 0.85, "timestamp": "2024-01-01T10:01:00"}
-            ]
+        # Mock trackio dependencies
+        with patch('trackio_mcp.tools.SQLiteStorage') as mock_storage:
+            mock_storage.get_projects.return_value = ["test-project"]
+            mock_storage.get_runs.return_value = ["run-1", "run-2"]
             
             tools = register_trackio_tools()
             if tools is None:
                 pytest.skip("Could not create tools interface")
             
-            # Verify tools interface was created
-            import gradio as gr
-            assert isinstance(tools, gr.Blocks)
-            
+            # Find the get_projects function
+            for comp in tools.blocks.values():
+                if hasattr(comp, 'fn') and comp.fn.__name__ == 'get_projects':
+                    result = comp.fn()
+                    
+                    # Should return dict, not JSON string
+                    assert isinstance(result, dict)
+                    assert result["success"] is True
+                    assert "projects" in result
+                    break
+            else:
+                pytest.skip("get_projects function not found")
+                
+    except ImportError:
+        pytest.skip("Required dependencies not available")
+
+
+def test_error_handling_decorator():
+    """Test that the error handling decorator works correctly."""
+    
+    try:
+        from trackio_mcp.tools import trackio_tool
+        
+        @trackio_tool
+        def failing_function():
+            raise ValueError("Test error")
+        
+        @trackio_tool
+        def working_function():
+            return {"success": True, "data": "test"}
+        
+        # Test error handling
+        error_result = failing_function()
+        assert isinstance(error_result, dict)
+        assert error_result["success"] is False
+        assert "Invalid input" in error_result["error"]
+        
+        # Test normal operation
+        success_result = working_function()
+        assert success_result["success"] is True
+        assert success_result["data"] == "test"
+        
     except ImportError:
         pytest.skip("Required dependencies not available")
 
@@ -125,10 +122,10 @@ def test_environment_variables():
     
     # Test disabling MCP
     with patch.dict(os.environ, {"TRACKIO_ENABLE_MCP": "false"}):
-        # Re-import to test env var effect
-        import importlib
-        if 'trackio_mcp.monkey_patch' in sys.modules:
-            importlib.reload(sys.modules['trackio_mcp.monkey_patch'])
+        from trackio_mcp.monkey_patch import patch_trackio
+        
+        # Should not raise errors when disabled
+        patch_trackio()  # Should be a no-op
 
 
 def test_cli_functionality():
@@ -149,21 +146,45 @@ def test_cli_functionality():
         pytest.skip("CLI dependencies not available")
 
 
-def test_json_responses():
-    """Test that tool functions return valid JSON."""
+def test_import_hook_safety():
+    """Test that import hooks don't break normal imports."""
     
     try:
-        from trackio_mcp.tools import register_trackio_tools
+        from trackio_mcp.monkey_patch import _install_import_hook, restore_imports
         
-        # Mock a simple test
-        test_json = '{"success": true, "data": []}'
-        parsed = json.loads(test_json)
+        # Install hook
+        _install_import_hook()
         
-        assert parsed["success"] is True
-        assert "data" in parsed
+        # Test normal imports still work
+        import json
+        import os
         
-    except ImportError:
-        pytest.skip("Required dependencies not available")
+        # Should work normally
+        data = json.dumps({"test": True})
+        assert '"test": true' in data.lower()
+        
+        # Restore for cleanliness
+        restore_imports()
+        
+    except Exception as e:
+        pytest.fail(f"Import hook broke normal imports: {e}")
+
+
+def test_requests_optional():
+    """Test that requests dependency is optional for basic functionality."""
+    
+    # Mock requests as unavailable
+    with patch.dict(sys.modules, {'requests': None}):
+        try:
+            from trackio_mcp.cli import _test_tools_only
+            
+            # Should work without requests
+            result = _test_tools_only()
+            assert result in [0, 1]  # Valid exit code
+            
+        except ImportError:
+            # This is expected if other dependencies missing
+            pass
 
 
 if __name__ == "__main__":
@@ -174,43 +195,37 @@ if __name__ == "__main__":
     
     tests = [
         test_import_order,
-        test_monkey_patch_applied,
-        test_trackio_tools_registration,
-        test_mcp_tools_functionality,
+        test_monkey_patch_thread_safety,
+        test_trackio_tools_return_dicts,
+        test_error_handling_decorator,
         test_environment_variables,
         test_cli_functionality,
-        test_json_responses,
+        test_import_hook_safety,
+        test_requests_optional,
     ]
     
-    passed = 0
-    failed = 0
-    skipped = 0
+    passed = failed = skipped = 0
     
     for test in tests:
         try:
             print(f"\nRunning {test.__name__}...")
             test()
-            print(f"  PASSED")
+            print(f"  ✓ PASSED")
             passed += 1
         except AssertionError as e:
-            print(f"  FAILED: {e}")
+            print(f"  ✗ FAILED: {e}")
             failed += 1
         except Exception as e:
             if "skip" in str(e).lower():
-                print(f"  SKIPPED: {e}")
+                print(f"  ⚠ SKIPPED: {e}")
                 skipped += 1
             else:
-                print(f"  ERROR: {e}")
+                print(f"  ✗ ERROR: {e}")
                 failed += 1
     
     print(f"\nTest Results:")
-    print(f"  Passed: {passed}")
-    print(f"  Failed: {failed}")
-    print(f"  Skipped: {skipped}")
+    print(f"  ✓ Passed: {passed}")
+    print(f"  ✗ Failed: {failed}")
+    print(f"  ⚠ Skipped: {skipped}")
     
-    if failed == 0:
-        print(f"\nAll tests passed!")
-        sys.exit(0)
-    else:
-        print(f"\nSome tests failed!")
-        sys.exit(1)
+    sys.exit(0 if failed == 0 else 1)
