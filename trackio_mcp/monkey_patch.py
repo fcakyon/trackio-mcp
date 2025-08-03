@@ -10,8 +10,8 @@ from functools import wraps
 def patch_trackio() -> None:
     """Apply monkey patches to enable MCP server functionality."""
     
-    # Check if MCP should be enabled
-    if os.getenv("TRACKIO_ENABLE_MCP", "true").lower() not in ("true", "1", "yes"):
+    # Check if MCP should be disabled (default: enabled)
+    if os.getenv("TRACKIO_DISABLE_MCP", "false").lower() in ("true", "1", "yes"):
         return
     
     # Simple direct patches
@@ -37,10 +37,6 @@ def _patch_gradio() -> None:
             # Set MCP defaults
             kwargs.setdefault('mcp_server', True)
             kwargs.setdefault('show_api', True)
-            
-            # Track MCP status
-            if kwargs.get('mcp_server'):
-                os.environ['TRACKIO_MCP_ENABLED'] = 'true'
                 
             # Call original method
             result = original_launch(self, *args, **kwargs)

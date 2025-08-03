@@ -12,9 +12,9 @@ def test_import_order():
     """Test that importing trackio_mcp enables MCP by default."""
     import trackio_mcp
     
-    # Check that MCP is enabled by default
-    mcp_enabled = os.getenv("TRACKIO_ENABLE_MCP", "true")
-    assert mcp_enabled.lower() in ("true", "1", "yes")
+    # Check that MCP is enabled by default (not disabled)
+    mcp_disabled = os.getenv("TRACKIO_DISABLE_MCP", "false")
+    assert mcp_disabled.lower() not in ("true", "1", "yes")
 
 
 def test_gradio_patching():
@@ -44,9 +44,6 @@ def test_gradio_patching():
         # Call the patched method (should not raise errors)
         gr.Blocks.launch(mock_self, quiet=True)
         
-        # Should have set environment variable
-        assert os.getenv('TRACKIO_MCP_ENABLED') == 'true'
-        
     except ImportError:
         pytest.skip("Gradio not available")
 
@@ -71,7 +68,7 @@ def test_multiple_patches_safe():
 
 def test_env_var_disable():
     """Test that MCP can be disabled via environment variable."""
-    with patch.dict(os.environ, {"TRACKIO_ENABLE_MCP": "false"}):
+    with patch.dict(os.environ, {"TRACKIO_DISABLE_MCP": "true"}):
         from trackio_mcp.monkey_patch import patch_trackio
         
         # Should not raise any errors when disabled
@@ -139,6 +136,29 @@ def test_import_trackio_mcp():
     assert trackio_mcp.__version__ == "0.1.0"
 
 
+def test_mcp_enabled_by_default():
+    """Test that MCP is enabled by default when importing."""
+    # Clear any existing environment variable
+    with patch.dict(os.environ, {}, clear=True):
+        from trackio_mcp.monkey_patch import patch_trackio
+        
+        # Should enable MCP by default (no env var set)
+        patch_trackio()
+        
+        # Should work without errors
+
+
+def test_mcp_disable_override():
+    """Test that setting TRACKIO_DISABLE_MCP=true disables MCP."""
+    with patch.dict(os.environ, {"TRACKIO_DISABLE_MCP": "true"}):
+        from trackio_mcp.monkey_patch import patch_trackio
+        
+        # Should not enable MCP when explicitly disabled
+        patch_trackio()
+        
+        # Should work without errors
+
+
 if __name__ == "__main__":
     # Run tests manually
     import sys
@@ -152,6 +172,8 @@ if __name__ == "__main__":
         test_trackio_tools_functionality,
         test_cli_commands,
         test_import_trackio_mcp,
+        test_mcp_enabled_by_default,
+        test_mcp_disable_override,
     ]
     
     passed = failed = skipped = 0

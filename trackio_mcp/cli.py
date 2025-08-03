@@ -75,11 +75,10 @@ def _show_status() -> int:
     
     # Check environment variables
     print("\nEnvironment Variables:")
-    mcp_enabled = os.getenv("TRACKIO_ENABLE_MCP", "true")
-    mcp_active = os.getenv("TRACKIO_MCP_ENABLED", "false")
+    mcp_disabled = os.getenv("TRACKIO_DISABLE_MCP", "false")
     
-    print(f"  TRACKIO_ENABLE_MCP: {mcp_enabled}")
-    print(f"  TRACKIO_MCP_ENABLED: {mcp_active}")
+    print(f"  TRACKIO_DISABLE_MCP: {mcp_disabled}")
+    print(f"  MCP Status: {'Disabled' if mcp_disabled.lower() in ('true', '1', 'yes') else 'Enabled (default)'}")
     
     # Check imports
     print("\nPackage Status:")
@@ -100,7 +99,7 @@ def _show_status() -> int:
         print(f"  gradio: {gr.__version__}")
         
         # Check MCP patches
-        if hasattr(gr.Blocks, '_original_launch'):
+        if hasattr(gr.Blocks.launch, '_mcp_patched'):
             print("  MCP patches: Applied")
         else:
             print("  MCP patches: Not applied")
