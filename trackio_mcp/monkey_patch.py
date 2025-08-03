@@ -50,11 +50,11 @@ def _install_import_hook() -> None:
         """Import hook that patches gradio when imported."""
         result = _original_import(name, *args, **kwargs)
         
-        # Patch gradio when it becomes available
-        if name == "gradio" or (name.startswith("gradio.") and "gradio" in sys.modules):
+        # Only patch gradio modules, avoid recursion
+        if name == "gradio" and "gradio" in sys.modules and not _gradio_patched:
             try:
-                import gradio as gr
-                _patch_gradio_launch(gr)
+                gr_module = sys.modules["gradio"]
+                _patch_gradio_launch(gr_module)
             except (ImportError, AttributeError):
                 pass
         
