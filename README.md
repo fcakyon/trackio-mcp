@@ -413,7 +413,6 @@ Create `.cursor/mcp.json` (or equivalent for your IDE):
 ### Environment Variables
 
 - `TRACKIO_DISABLE_MCP`: Set to `"true"` to disable MCP functionality (default: MCP enabled)
-- `TRACKIO_MCP_ENABLED`: Set automatically when MCP is enabled
 
 ### Programmatic Control
 
