@@ -109,43 +109,12 @@ Agent: Your latest image-classification run achieved 94.2% accuracy with a final
 
 ## MCP Client Configuration
 
-### Prerequisites
-
-**✅ MCP is enabled by default** when you import `trackio_mcp`. No environment variables needed!
-
-To disable MCP functionality if needed:
-
-```bash
-# Disable MCP (not recommended for trackio-mcp users)
-export TRACKIO_DISABLE_MCP="true"
-```
-
-Or in your Python code:
-
-```python
-import os
-os.environ["TRACKIO_DISABLE_MCP"] = "true"  # Disable MCP
-import trackio_mcp  # MCP won't be enabled
-import trackio
-```
-
 <details>
 <summary><b>Claude Desktop</b></summary>
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or equivalent:
 
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "url": "http://localhost:7860/gradio_api/mcp/sse"
-    }
-  }
-}
-```
-
-For Hugging Face Spaces:
-
+**Public Spaces:**
 ```json
 {
   "mcpServers": {
@@ -156,16 +125,26 @@ For Hugging Face Spaces:
 }
 ```
 
-For private Spaces, add authentication:
-
+**Private Spaces/Datasets:**
 ```json
 {
   "mcpServers": {
     "trackio": {
-      "url": "https://your-space.hf.space/gradio_api/mcp/sse",
+      "url": "https://your-private-space.hf.space/gradio_api/mcp/sse",
       "headers": {
         "Authorization": "Bearer YOUR_HF_TOKEN"
       }
+    }
+  }
+}
+```
+
+**Local Development:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
     }
   }
 }
@@ -176,18 +155,19 @@ For private Spaces, add authentication:
 <details>
 <summary><b>Claude Code</b></summary>
 
-Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials#set-up-model-context-protocol-mcp) for more info.
+See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials#set-up-model-context-protocol-mcp) for more info.
 
-#### Remote Server Connection
-
+**Public Spaces:**
 ```sh
 claude mcp add --transport sse trackio https://your-space.hf.space/gradio_api/mcp/sse
 ```
 
-#### Local Connection
+**Private Spaces/Datasets:**
+```sh
+claude mcp add --transport sse --header "Authorization: Bearer YOUR_HF_TOKEN" trackio https://your-private-space.hf.space/gradio_api/mcp/sse
+```
 
-Add to `~/.claude.json`:
-
+**Local Development:**
 ```json
 {
   "mcpServers": {
@@ -206,23 +186,37 @@ Add to `~/.claude.json`:
 
 Add to your Cursor `~/.cursor/mcp.json` file or create `.cursor/mcp.json` in your project folder. See [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol) for more info.
 
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "url": "http://localhost:7860/gradio_api/mcp/sse"
-    }
-  }
-}
-```
-
-For Hugging Face Spaces:
-
+**Public Spaces:**
 ```json
 {
   "mcpServers": {
     "trackio": {
       "url": "https://your-space.hf.space/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+**Private Spaces/Datasets:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "https://your-private-space.hf.space/gradio_api/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer YOUR_HF_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**Local Development:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
     }
   }
 }
@@ -235,23 +229,37 @@ For Hugging Face Spaces:
 
 Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.windsurf.com/windsurf/mcp) for more info.
 
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "serverUrl": "http://localhost:7860/gradio_api/mcp/sse"
-    }
-  }
-}
-```
-
-For Hugging Face Spaces:
-
+**Public Spaces:**
 ```json
 {
   "mcpServers": {
     "trackio": {
       "serverUrl": "https://your-space.hf.space/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+**Private Spaces/Datasets:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "serverUrl": "https://your-private-space.hf.space/gradio_api/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer YOUR_HF_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**Local Development:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "serverUrl": "http://localhost:7860/gradio_api/mcp/sse"
     }
   }
 }
@@ -264,6 +272,38 @@ For Hugging Face Spaces:
 
 Add to `.vscode/mcp.json`. See [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) for more info.
 
+**Public Spaces:**
+```json
+{
+  "mcp": {
+    "servers": {
+      "trackio": {
+        "type": "http",
+        "url": "https://your-space.hf.space/gradio_api/mcp/sse"
+      }
+    }
+  }
+}
+```
+
+**Private Spaces/Datasets:**
+```json
+{
+  "mcp": {
+    "servers": {
+      "trackio": {
+        "type": "http", 
+        "url": "https://your-private-space.hf.space/gradio_api/mcp/sse",
+        "headers": {
+          "Authorization": "Bearer YOUR_HF_TOKEN"
+        }
+      }
+    }
+  }
+}
+```
+
+**Local Development:**
 ```json
 {
   "mcp": {
@@ -277,21 +317,6 @@ Add to `.vscode/mcp.json`. See [VS Code MCP docs](https://code.visualstudio.com/
 }
 ```
 
-For Hugging Face Spaces:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "trackio": {
-        "type": "http", 
-        "url": "https://your-space.hf.space/gradio_api/mcp/sse"
-      }
-    }
-  }
-}
-```
-
 </details>
 
 <details>
@@ -299,25 +324,40 @@ For Hugging Face Spaces:
 
 Add to `mcp.json` in your project directory. See [Gemini CLI Configuration](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/configuration.md) for details.
 
+**Public Spaces:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://your-space.hf.space/gradio_api/mcp/sse"]
+    }
+  }
+}
+```
+
+**Private Spaces/Datasets:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "command": "npx", 
+      "args": ["mcp-remote", "https://your-private-space.hf.space/gradio_api/mcp/sse"],
+      "env": {
+        "HF_TOKEN": "YOUR_HF_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**Local Development:**
 ```json
 {
   "mcpServers": {
     "trackio": {
       "command": "npx",
       "args": ["mcp-remote", "http://localhost:7860/gradio_api/mcp/sse"]
-    }
-  }
-}
-```
-
-For Hugging Face Spaces:
-
-```json
-{
-  "mcpServers": {
-    "trackio": {
-      "command": "npx", 
-      "args": ["mcp-remote", "https://your-space.hf.space/gradio_api/mcp/sse"]
     }
   }
 }
@@ -330,22 +370,32 @@ For Hugging Face Spaces:
 
 Create `.cursor/mcp.json` (or equivalent for your IDE):
 
+**Public Spaces:**
 ```json
 {
   "mcpServers": {
     "trackio": {
-      "command": "npx",
-      "args": [
-        "mcp-remote", 
-        "http://localhost:7860/gradio_api/mcp/sse"
-      ]
+      "url": "https://your-space.hf.space/gradio_api/mcp/sse"
     }
   }
 }
 ```
 
-For SSE direct support:
+**Private Spaces/Datasets:**
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "https://your-private-space.hf.space/gradio_api/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer YOUR_HF_TOKEN"
+      }
+    }
+  }
+}
+```
 
+**Local Development:**
 ```json
 {
   "mcpServers": {
@@ -363,7 +413,6 @@ For SSE direct support:
 ### Environment Variables
 
 - `TRACKIO_DISABLE_MCP`: Set to `"true"` to disable MCP functionality (default: MCP enabled)
-- `GRADIO_MCP_SERVER`: Legacy variable, use TRACKIO_DISABLE_MCP instead
 - `TRACKIO_MCP_ENABLED`: Set automatically when MCP is enabled
 
 ### Programmatic Control
@@ -401,23 +450,36 @@ import trackio
 trackio.show()  # Dashboard + MCP server at http://localhost:7860
 ```
 
-### Production Spaces Deployment
+### Public Spaces Deployment
 
 ```python
 import trackio_mcp
 import trackio as wandb
 
-# Deploy to production with MCP support
+# Deploy to public Spaces with MCP support
 wandb.init(
-    project="production-model",
-    space_id="company/model-tracking",
-    dataset_id="company/model-metrics"  # Persistent storage
+    project="public-model",
+    space_id="username/model-tracking"
 )
 
-# Your training loop
-for epoch in range(100):
-    wandb.log({"epoch": epoch, "loss": loss, "accuracy": acc})
+wandb.log({"epoch": 1, "loss": 0.5})
+wandb.finish()
+```
 
+### Private Spaces/Datasets Deployment
+
+```python
+import trackio_mcp
+import trackio as wandb
+
+# Deploy to private Spaces with private dataset
+wandb.init(
+    project="private-model",
+    space_id="organization/private-model-tracking",  # Private space
+    dataset_id="organization/private-model-metrics"  # Private dataset
+)
+
+wandb.log({"epoch": 1, "loss": 0.5})
 wandb.finish()
 ```
 
@@ -436,7 +498,7 @@ trackio-mcp test --url http://localhost:7860
 
 ## Security Considerations
 
-- **Private Spaces**: Use HF tokens for authentication
+- **Private Spaces**: Use HF tokens for authentication with private spaces/datasets
 - **Access Control**: MCP server inherits trackio's access controls
 - **Network Security**: Consider firewall rules for production deployments
 - **Token Management**: Store HF tokens securely, use environment variables
@@ -449,7 +511,7 @@ trackio-mcp test --url http://localhost:7860
 import trackio_mcp
 import trackio
 
-# Check if MCP was enabled
+# Check if MCP was disabled
 import os
 print("MCP Disabled:", os.getenv("TRACKIO_DISABLE_MCP"))
 
@@ -460,7 +522,7 @@ trackio.show()  # Look for MCP server URL in output
 ### Connection Issues
 
 1. **Check URL**: Ensure correct `/gradio_api/mcp/sse` endpoint
-2. **Authentication**: Add Bearer token for private Spaces
+2. **Authentication**: Add Bearer token for private Spaces/datasets
 3. **Network**: Verify firewall/proxy settings
 4. **Dependencies**: Ensure `gradio[mcp]` is installed
 
