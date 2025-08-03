@@ -33,21 +33,26 @@ def test_monkey_patch_applied():
         # Check if patch was applied
         assert hasattr(gr.Blocks, '_original_launch'), "Gradio launch should be patched"
         
-        # Test that the patched method sets MCP parameters by mocking the original launch
-        with patch.object(gr.Blocks, '_original_launch', return_value=(None, None, None)) as mock_launch:
-            demo = gr.Blocks()
-            
-            # Mock the exited attribute that newer Gradio versions expect
+        # Test that the patched method modifies kwargs correctly without actually launching
+        demo = gr.Blocks()
+        
+        # Mock the _original_launch to avoid hanging
+        with patch.object(demo, '_original_launch', return_value=(None, None, None)) as mock_launch:
+            # Add required attributes for newer Gradio versions
             demo.exited = False
+            demo._is_running_in_reload_thread = False
             
-            result = demo.launch()
+            # Call launch with mocked original_launch
+            demo.launch(quiet=True)
             
-            # Check that MCP parameters were added
+            # Verify the patched method was called with correct parameters
+            mock_launch.assert_called_once()
             call_args = mock_launch.call_args
             kwargs = call_args[1] if call_args else {}
             
             assert kwargs.get('mcp_server') is True
             assert kwargs.get('show_api') is True
+            assert kwargs.get('quiet') is True
             
     except ImportError:
         pytest.skip("Gradio not available")
