@@ -1,0 +1,105 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trackio-mcp"
+description = "MCP (Model Context Protocol) server support for trackio experiment tracking"
+authors = [
+    { name = "Fatih Akyon", email = "fatihakyon@gmail.com" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "trackio==0.2.2",
+    "gradio[mcp]>=5.35.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dynamic = ["version"]
+keywords = [
+    "machine learning",
+    "experiment tracking",
+    "MCP",
+    "Model Context Protocol",
+    "AI agents",
+    "trackio",
+    "gradio"
+]
+
+[project.urls]
+homepage = "https://github.com/fcakyon/trackio-mcp"
+repository = "https://github.com/fcakyon/trackio-mcp"
+documentation = "https://github.com/fcakyon/trackio-mcp#readme"
+issues = "https://github.com/fcakyon/trackio-mcp/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "black>=23.0",
+    "mypy>=1.0",
+]
+
+[project.scripts]
+trackio-mcp = "trackio_mcp.cli:main"
+
+[tool.hatch.version]
+path = "trackio_mcp/__init__.py"
+pattern = '^__version__ = ["\'](?P<version>[^"\']*)["\']'
+
+[tool.hatch.build.targets.wheel]
+packages = ["trackio_mcp"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+exclude = [
+    ".git",
+    ".mypy_cache", 
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "trackio.*",
+    "gradio.*",
+]
+ignore_missing_imports = true
