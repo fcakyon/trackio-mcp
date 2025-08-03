@@ -73,9 +73,12 @@ launch_trackio_mcp_server(port=7861, share=False)
 
 ## MCP Client Configuration
 
-### Claude Desktop
+### Claude Desktop & Gemini CLI & Claude Code
 
-Add to your Claude Desktop configuration:
+These clients use similar JSON configuration structures with `mcpServers`:
+
+#### Claude Desktop
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or equivalent:
 
 ```json
 {
@@ -87,7 +90,35 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-For Hugging Face Spaces:
+#### Gemini CLI
+Add to `mcp.json` in your project directory:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:7860/gradio_api/mcp/sse"]
+    }
+  }
+}
+```
+
+#### Claude Code
+Add to `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "type": "sse",
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+For Hugging Face Spaces, replace the URL:
 
 ```json
 {
@@ -116,9 +147,7 @@ For private Spaces, add authentication:
 
 ### Cursor/Windsurf/Cline
 
-For clients that support SSE directly, use the same URLs as above.
-
-### For stdio clients
+Create `.cursor/mcp.json` (or equivalent for your IDE):
 
 ```json
 {
@@ -129,6 +158,33 @@ For clients that support SSE directly, use the same URLs as above.
         "mcp-remote", 
         "http://localhost:7860/gradio_api/mcp/sse"
       ]
+    }
+  }
+}
+```
+
+For SSE direct support:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+### VS Code
+
+For VS Code with Copilot, add to `.vscode/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "trackio": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:7860/gradio_api/mcp/sse"]
     }
   }
 }
