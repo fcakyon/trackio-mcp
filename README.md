@@ -229,6 +229,19 @@ for epoch in range(100):
 wandb.finish()
 ```
 
+## CLI Interface
+
+```bash
+# Launch standalone MCP server
+trackio-mcp server --port 7861
+
+# Check status and configuration
+trackio-mcp status
+
+# Test MCP server functionality
+trackio-mcp test --url http://localhost:7860
+```
+
 ## Security Considerations
 
 - **Private Spaces**: Use HF tokens for authentication
